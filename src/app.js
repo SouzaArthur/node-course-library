@@ -1,20 +1,25 @@
 import express from "express";
+import books from "./models/Book.js";
+import db from "./config/dbConnect.js";
 
 const app = express();
+db.on("error", console.log.bind(console, "error connecting"));
+db.once("open", () => console.log("sucessfuly connected"));
 
 app.use(express.json());
-
-const bookListMocked = [
-    {id: 1, "bookName": "Bible"},
-    {id: 2, "bookName": "Hitchicker's guide to the galaxy"},
-];
 
 app.get("/", (req, res) => {
     res.status(200).send("Node Course");
 });
 
-app.get("/books", (req, res) => {
-    res.status(200).json(bookListMocked);
+app.get("/books", async (req, res) => {
+    const response = await books.find({}).exec();
+
+    try {
+        res.status(200).json(response);
+    } catch(error){
+        res.send("error on getting response", error)
+    }
 });
 
 app.get("/books/:id", (req, res) => {
@@ -31,6 +36,13 @@ app.put("/books/:id", (req, res) => {
     const bookIndex = bookListMocked.findIndex(book => book.id == req.params.id);
     bookListMocked[bookIndex].bookName = req.body.bookName;
     res.json(bookListMocked);
+});
+
+app.delete("/books/:id", (req, res) => {
+    const {id} = req.params;
+    const bookIndex = bookListMocked.findIndex(book => book.id == req.params.id);
+    bookListMocked.splice(bookIndex, 1);
+    res.send(`Book ${id} deleted`);
 });
 
 export default app;
